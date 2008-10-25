@@ -3,8 +3,9 @@
 HandyNotes_Directions = LibStub("AceAddon-3.0"):NewAddon("HandyNotes_Directions","AceEvent-3.0","AceHook-3.0")
 local HD = HandyNotes_Directions
 local HandyNotes = LibStub("AceAddon-3.0"):GetAddon("HandyNotes")
-local Astrolabe = DongleStub("Astrolabe-0.4-NC")
+local Astrolabe = DongleStub("Astrolabe-0.4")
 local L = LibStub("AceLocale-3.0"):GetLocale("HandyNotes_Directions", true)
+local GameVersion = select(4, GetBuildInfo())
 
 
 ---------------------------------------------------------
@@ -65,12 +66,21 @@ function HDHandler:OnEnter(mapFile, coord)
 	clickedLandmarkZone = nil
 end
 
-local function deletePin(mapFile, coord)
+local function deletePin(button, mapFile, coord)
+	if GameVersion < 30000 then
+		coord = mapFile
+		mapFile = button
+	end
 	HD.db.global.landmarks[mapFile][coord] = nil
 	HD:SendMessage("HandyNotes_NotifyUpdate", "Directions")
 end
 
-local function createWaypoint(mapFile, coord, temporary)
+local function createWaypoint(button, mapFile, coord, temporary)
+	if GameVersion < 30000 then
+		temporary = coord
+		coord = mapFile
+		mapFile = button
+	end
 	local c, z = HandyNotes:GetCZ(mapFile)
 	local x, y = HandyNotes:getXY(coord)
 	local name = HD.db.global.landmarks[mapFile][coord]
@@ -87,7 +97,10 @@ local function createWaypoint(mapFile, coord, temporary)
 	end
 end
 
-local function generateMenu(level)
+local function generateMenu(button, level)
+	if GameVersion < 30000 then
+		level = button
+	end
 	if (not level) then return end
 	for k in pairs(info) do info[k] = nil end
 	if (level == 1) then
@@ -124,7 +137,7 @@ local function generateMenu(level)
 		-- Close menu item
 		info.text         = "Close"
 		info.icon         = nil
-		info.func         = CloseDropDownMenus
+		info.func         = function() CloseDropDownMenus() end
 		info.arg1         = nil
 		info.notCheckable = 1
 		UIDropDownMenu_AddButton(info, level);
