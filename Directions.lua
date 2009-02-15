@@ -43,7 +43,7 @@ local function setupLandmarkIcon(texture, left, right, top, bottom)
 	}
 end
 
-local icon = setupLandmarkIcon([[Interface\Minimap\POIIcons]], WorldMap_GetPOITextureCoords(6)) -- the cute lil' flag
+local icon = setupLandmarkIcon([[Interface\Minimap\POIIcons]], WorldMap_GetPOITextureCoords(7)) -- the cute lil' flag
 
 ---------------------------------------------------------
 -- Plugin Handlers to HandyNotes
@@ -190,7 +190,7 @@ function HD:CheckForLandmarks()
 	if not lastGossip then return end
 	for mark = 1, GetNumMapLandmarks(), 1 do
 		local name, _, tex, x, y = GetMapLandmarkInfo(mark)
-		if tex == 6 and not alreadyAdded[name] then
+		if tex == 7 and not alreadyAdded[name] then
 			alreadyAdded[name] = true
 			self:AddLandmark(x, y, lastGossip)
 		end
