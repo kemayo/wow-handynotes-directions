@@ -75,12 +75,7 @@ local function deletePin(button, mapFile, coord)
 	HD:SendMessage("HandyNotes_NotifyUpdate", "Directions")
 end
 
-local function createWaypoint(button, mapFile, coord, temporary)
-	if GameVersion < 30000 then
-		temporary = coord
-		coord = mapFile
-		mapFile = button
-	end
+local function createWaypoint(button, mapFile, coord)
 	local c, z = HandyNotes:GetCZ(mapFile)
 	local x, y = HandyNotes:getXY(coord)
 	local name = HD.db.global.landmarks[mapFile][coord]
@@ -210,7 +205,7 @@ function HD:AddLandmark(x, y, name)
 	end
 	self.db.global.landmarks[mapFile][loc] = name
 	self:SendMessage("HandyNotes_NotifyUpdate", "Directions")
-	createWaypoint(mapFile, loc, true)
+	createWaypoint(nil, mapFile, loc)
 end
 
 local replacements = {
