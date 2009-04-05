@@ -5,8 +5,6 @@ local HD = HandyNotes_Directions
 local HandyNotes = LibStub("AceAddon-3.0"):GetAddon("HandyNotes")
 local Astrolabe = DongleStub("Astrolabe-0.4")
 local L = LibStub("AceLocale-3.0"):GetLocale("HandyNotes_Directions", true)
-local GameVersion = select(4, GetBuildInfo())
-
 
 ---------------------------------------------------------
 -- Our db upvalue and db defaults
@@ -67,10 +65,6 @@ function HDHandler:OnEnter(mapFile, coord)
 end
 
 local function deletePin(button, mapFile, coord)
-	if GameVersion < 30000 then
-		coord = mapFile
-		mapFile = button
-	end
 	HD.db.global.landmarks[mapFile][coord] = nil
 	HD:SendMessage("HandyNotes_NotifyUpdate", "Directions")
 end
@@ -93,9 +87,6 @@ local function createWaypoint(button, mapFile, coord)
 end
 
 local function generateMenu(button, level)
-	if GameVersion < 30000 then
-		level = button
-	end
 	if (not level) then return end
 	for k in pairs(info) do info[k] = nil end
 	if (level == 1) then
