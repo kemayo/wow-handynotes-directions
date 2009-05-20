@@ -209,8 +209,9 @@ local replacements = {
 	[L["The east."]] = L[": East"],
 	[L["The west."]] = L[": West"],
 }
-function HD:SelectGossipOption(index)
+function HD:SelectGossipOption(index, ...)
 	local selected = select((index * 2) - 1, GetGossipOptions())
+	if not selected then return end
 	if replacements[selected] then selected = replacements[selected] end
 	if lastGossip then
 		lastGossip = lastGossip .. selected
