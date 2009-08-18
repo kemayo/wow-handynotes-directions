@@ -200,7 +200,9 @@ function HD:AddLandmark(x, y, name)
 end
 
 local replacements = {
+	[L["A profession trainer"]] = L["Trainer: "],
 	[L["Profession Trainer"]] = L["Trainer: "],
+	[L["A class trainer"]] = L["Trainer: "],
 	[L["Class Trainer"]] = L["Trainer: "],
 	[L["Alliance Battlemasters"]] = L[": Alliance"],
 	[L["Horde Battlemasters"]] = L[": Horde"],
