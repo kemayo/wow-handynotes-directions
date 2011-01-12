@@ -3,8 +3,11 @@
 HandyNotes_Directions = LibStub("AceAddon-3.0"):NewAddon("HandyNotes_Directions","AceEvent-3.0","AceHook-3.0")
 local HD = HandyNotes_Directions
 local HandyNotes = LibStub("AceAddon-3.0"):GetAddon("HandyNotes")
-local Astrolabe = DongleStub("Astrolabe-0.4")
+local Astrolabe = DongleStub("Astrolabe-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("HandyNotes_Directions", true)
+
+local debugf = tekDebug and tekDebug:GetFrame("Directions")
+local function Debug(...) if debugf then debugf:AddMessage(string.join(", ", tostringall(...))) end end
 
 ---------------------------------------------------------
 -- Our db upvalue and db defaults
@@ -156,6 +159,7 @@ do
 		local state, value = next(t, prestate)
 		while state do -- Have we reached the end of this zone?
 			if value then
+				Debug("iter step", state, icon, db.icon_scale, db.icon_alpha)
 				return state, nil, icon, db.icon_scale, db.icon_alpha
 			end
 			state, value = next(t, state) -- Get next data
