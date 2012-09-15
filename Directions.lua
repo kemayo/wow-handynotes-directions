@@ -44,7 +44,7 @@ local function setupLandmarkIcon(texture, left, right, top, bottom)
 	}
 end
 
-local icon = setupLandmarkIcon([[Interface\Minimap\POIIcons]], WorldMap_GetPOITextureCoords(7)) -- the cute lil' flag
+local icon = setupLandmarkIcon([[Interface\Minimap\POIIcons]], GetPOITextureCoords(7)) -- the cute lil' flag
 
 ---------------------------------------------------------
 -- Plugin Handlers to HandyNotes
@@ -181,6 +181,7 @@ function HD:CheckForLandmarks()
 	for mark = 1, GetNumMapLandmarks(), 1 do
 		local name, _, tex, x, y = GetMapLandmarkInfo(mark)
 		if tex == 7 and not alreadyAdded[name] then
+			Debug("Found POI!", name)
 			alreadyAdded[name] = true
 			self:AddLandmark(x, y, lastGossip)
 		end
@@ -188,13 +189,13 @@ function HD:CheckForLandmarks()
 end
 
 function HD:AddLandmark(x, y, name)
-	local c,z = Astrolabe:GetCurrentPlayerPosition()
-	if not c then return end
+	local z = GetCurrentMapAreaID()
 	local loc = HandyNotes:getCoord(x, y)
-	local mapFile = HandyNotes:GetMapFile(c, z)
+	local mapFile = HandyNotes:GetMapIDtoMapFile(z)
 	if not mapFile then return end
 	for coord,value in pairs(self.db.global.landmarks[mapFile]) do
 		if value and value:match("^"..name) then
+			Debug("already a match on name", name, value)
 			return
 		end
 	end
@@ -204,29 +205,32 @@ function HD:AddLandmark(x, y, name)
 end
 
 local replacements = {
-	[L["A profession trainer"]] = L["Trainer: "],
-	[L["Profession Trainer"]] = L["Trainer: "],
-	[L["A class trainer"]] = L["Trainer: "],
-	[L["Class Trainer"]] = L["Trainer: "],
-	[L["Alliance Battlemasters"]] = L[": Alliance"],
-	[L["Horde Battlemasters"]] = L[": Horde"],
-	[L["To the east."]] = L[": East"],
-	[L["To the west."]] = L[": West"],
-	[L["The east."]] = L[": East"],
-	[L["The west."]] = L[": West"],
+	[L["A profession trainer"]] = L["Trainer"],
+	[L["Profession Trainer"]] = L["Trainer"],
+	[L["A class trainer"]] = L["Trainer"],
+	[L["Class Trainer"]] = L["Trainer"],
+	[L["Alliance Battlemasters"]] = L["Alliance"],
+	[L["Horde Battlemasters"]] = L["Horde"],
+	[L["To the east."]] = L["East"],
+	[L["To the west."]] = L["West"],
+	[L["The east."]] = L["East"],
+	[L["The west."]] = L["West"],
 }
 function HD:SelectGossipOption(index, ...)
+	Debug("SelectGossipOption", index, ...)
 	local selected = select((index * 2) - 1, GetGossipOptions())
 	if not selected then return end
 	if replacements[selected] then selected = replacements[selected] end
 	if lastGossip then
-		lastGossip = lastGossip .. selected
+		lastGossip = lastGossip .. ': ' .. selected
 	else
 		lastGossip = selected
 	end
+	Debug(" -> lastGossip", lastGossip)
 end
 
 function HD:GOSSIP_CLOSED()
+	Debug("GOSSIP_CLOSED")
 	lastGossip = nil
 end
 
