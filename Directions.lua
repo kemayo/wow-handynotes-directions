@@ -33,6 +33,7 @@ local HandyNotes = HandyNotes
 ---------------------------------------------------------
 -- Constants
 
+local icon
 local function setupLandmarkIcon(texture, left, right, top, bottom)
 	return {
 		icon = texture,
@@ -42,8 +43,6 @@ local function setupLandmarkIcon(texture, left, right, top, bottom)
 		tCoordBottom = bottom,
 	}
 end
-
-local icon = setupLandmarkIcon([[Interface\Minimap\POIIcons]], GetPOITextureCoords(7)) -- the cute lil' flag
 
 ---------------------------------------------------------
 -- Plugin Handlers to HandyNotes
@@ -278,6 +277,9 @@ function HD:OnInitialize()
 			self.db.global.landmarks[k] = {}
 		end
 	end
+
+	icon = setupLandmarkIcon([[Interface\Minimap\POIIcons]], GetPOITextureCoords(7)) -- the cute lil' flag
+
 	-- Initialize our database with HandyNotes
 	HandyNotes:RegisterPluginDB("Directions", HDHandler, options)
 end
