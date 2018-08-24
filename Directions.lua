@@ -1,6 +1,6 @@
 ---------------------------------------------------------
 -- Addon declaration
-HandyNotes_Directions = LibStub("AceAddon-3.0"):NewAddon("HandyNotes_Directions","AceEvent-3.0","AceHook-3.0")
+HandyNotes_Directions = LibStub("AceAddon-3.0"):NewAddon("HandyNotes_Directions","AceEvent-3.0")
 local HD = HandyNotes_Directions
 local HandyNotes = LibStub("AceAddon-3.0"):GetAddon("HandyNotes")
 local L = LibStub("AceLocale-3.0"):GetLocale("HandyNotes_Directions", true)
@@ -268,6 +268,7 @@ local options = {
 ---------------------------------------------------------
 -- Addon initialization, enabling and disabling
 
+
 function HD:OnInitialize()
 	-- Set up our database
 	self.db = LibStub("AceDB-3.0"):New("HandyNotes_DirectionsDB", defaults)
@@ -281,9 +282,18 @@ function HD:OnInitialize()
 	HandyNotes:RegisterPluginDB("Directions", HDHandler, options)
 end
 
+local orig_SelectGossipOption
 function HD:OnEnable()
 	self:RegisterEvent("DYNAMIC_GOSSIP_POI_UPDATED", "CheckForLandmarks")
 	self:RegisterEvent("GOSSIP_CLOSED")
-	self:Hook("SelectGossipOption", true)
+
+	orig_SelectGossipOption = SelectGossipOption
+	SelectGossipOption = function(...)
+		HD:SelectGossipOption(...)
+		orig_SelectGossipOption(...)
+	end
 end
 
+function HD:OnDisable()
+	SelectGossipOption = orig_SelectGossipOption
+end
