@@ -165,15 +165,16 @@ end
 
 local alreadyAdded = {}
 function HD:CheckForLandmarks()
+	Debug("CheckForLandmarks", lastGossip)
 	if not lastGossip then return end
 	local mapID = C_Map.GetBestMapForUnit('player')
-	local gossipPoiID = C_GossipInfo.GetGossipPoiForUiMapID(mapID)
+	local poiID = C_GossipInfo.GetPoiForUiMapID(mapID)
 
-	if gossipPoiID and not alreadyAdded[gossipPoiID] then
-		local gossipInfo = C_GossipInfo.GetGossipPoiInfo(mapID, gossipPoiID);
+	if poiID and not alreadyAdded[poiID] then
+		local gossipInfo = C_GossipInfo.GetPoiInfo(mapID, poiID);
 		if gossipInfo and gossipInfo.textureIndex == 7 then
 			Debug("Found POI", gossipInfo.name)
-			alreadyAdded[gossipPoiID] = true
+			alreadyAdded[poiID] = true
 			self:AddLandmark(mapID, gossipInfo.position.x, gossipInfo.position.y, lastGossip)
 		end
 	end
@@ -206,13 +207,14 @@ local replacements = {
 }
 function HD:SelectGossipOption(index, ...)
 	Debug("SelectGossipOption", index, ...)
-	local selected = select((index * 2) - 1, GetGossipOptions())
+	local selected = C_GossipInfo.GetOptions()[index]
 	if not selected then return end
-	if replacements[selected] then selected = replacements[selected] end
+	local name = selected.name
+	if replacements[name] then name = replacements[name] end
 	if lastGossip then
-		lastGossip = lastGossip .. ': ' .. selected
+		lastGossip = lastGossip .. ': ' .. name
 	else
-		lastGossip = selected
+		lastGossip = name
 	end
 	Debug(" -> lastGossip", lastGossip)
 end
@@ -284,13 +286,13 @@ function HD:OnEnable()
 	self:RegisterEvent("DYNAMIC_GOSSIP_POI_UPDATED", "CheckForLandmarks")
 	self:RegisterEvent("GOSSIP_CLOSED")
 
-	orig_SelectGossipOption = SelectGossipOption
-	SelectGossipOption = function(...)
+	orig_SelectGossipOption = C_GossipInfo.SelectOption
+	C_GossipInfo.SelectOption = function(...)
 		HD:SelectGossipOption(...)
 		orig_SelectGossipOption(...)
 	end
 end
 
 function HD:OnDisable()
-	SelectGossipOption = orig_SelectGossipOption
+	C_GossipInfo.SelectOption = orig_SelectGossipOption
 end
