@@ -95,7 +95,7 @@ local function generateMenu(button, level)
 			-- Waypoint menu item
 			info.disabled     = nil
 			info.isTitle      = nil
-			info.notCheckable = nil
+			info.notCheckable = true
 			info.text = "Create waypoint"
 			info.icon = nil
 			info.func = createWaypoint
@@ -107,9 +107,9 @@ local function generateMenu(button, level)
 		-- Delete menu item
 		info.disabled     = nil
 		info.isTitle      = nil
-		info.notCheckable = nil
+		info.notCheckable = true
 		info.text = "Delete landmark"
-		info.icon = icon
+		info.icon = "poi-islands-table"
 		info.func = deletePin
 		info.arg1 = clickedLandmarkZone
 		info.arg2 = clickedLandmark
