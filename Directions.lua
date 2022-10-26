@@ -275,7 +275,7 @@ function HD:OnInitialize()
 		end
 	end
 
-	icon = setupLandmarkIcon([[Interface\Minimap\POIIcons]], GetPOITextureCoords(7)) -- the cute lil' flag
+	icon = setupLandmarkIcon([[Interface\Minimap\POIIcons]], (_G.GetPOITextureCoords or C_Minimap.GetPOITextureCoords)(7)) -- the cute lil' flag
 
 	-- Initialize our database with HandyNotes
 	HandyNotes:RegisterPluginDB("Directions", HDHandler, options)
