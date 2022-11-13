@@ -50,6 +50,7 @@ local info = {}
 local clickedLandmark = nil
 local clickedLandmarkZone = nil
 local lastGossip = nil
+local currentOptions
 
 function HDHandler:OnEnter(mapID, coord)
 	local tooltip = GameTooltip
@@ -208,9 +209,15 @@ local replacements = {
 	[L["The east."]] = L["East"],
 	[L["The west."]] = L["West"],
 }
-function HD:SelectGossipOption(index, ...)
-	Debug("SelectGossipOption", index, ...)
-	local selected = C_GossipInfo.GetOptions()[index]
+function HD:OnGossipSelectOption(optionID, ...)
+	Debug("OnGossipSelectOption", optionID)
+	local selected
+	for _, option in ipairs(currentOptions) do
+		if option.gossipOptionID == optionID then
+			selected = option
+			break
+		end
+	end
 	if not selected then return end
 	local name = selected.name
 	if replacements[name] then name = replacements[name] end
@@ -220,6 +227,11 @@ function HD:SelectGossipOption(index, ...)
 		lastGossip = name
 	end
 	Debug(" -> lastGossip", lastGossip)
+end
+
+function HD:GOSSIP_SHOW()
+	Debug("GOSSIP_SHOW")
+	currentOptions = C_GossipInfo.GetOptions()
 end
 
 function HD:GOSSIP_CLOSED()
@@ -288,14 +300,9 @@ local orig_SelectGossipOption
 function HD:OnEnable()
 	self:RegisterEvent("DYNAMIC_GOSSIP_POI_UPDATED", "CheckForLandmarks")
 	self:RegisterEvent("GOSSIP_CLOSED")
+	self:RegisterEvent("GOSSIP_SHOW")
 
-	orig_SelectGossipOption = C_GossipInfo.SelectOption
-	C_GossipInfo.SelectOption = function(...)
-		HD:SelectGossipOption(...)
-		orig_SelectGossipOption(...)
-	end
-end
-
-function HD:OnDisable()
-	C_GossipInfo.SelectOption = orig_SelectGossipOption
+	hooksecurefunc(C_GossipInfo, "SelectOption", function(...)
+		HD:OnGossipSelectOption(...)
+	end)
 end
