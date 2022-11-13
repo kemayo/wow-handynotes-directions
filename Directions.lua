@@ -124,12 +124,15 @@ local function generateMenu(button, level)
 		UIDropDownMenu_AddButton(info, level);
 	end
 end
-local HD_Dropdown = CreateFrame("Frame", "HandyNotes_DirectionsDropdownMenu")
-HD_Dropdown.displayMode = "MENU"
-HD_Dropdown.initialize = generateMenu
 
+local HD_Dropdown
 function HDHandler:OnClick(button, down, mapID, coord)
 	if button == "RightButton" and not down then
+		if not HD_Dropdown then
+			HD_Dropdown = CreateFrame("Frame", "HandyNotes_DirectionsDropdownMenu")
+			HD_Dropdown.displayMode = "MENU"
+			HD_Dropdown.initialize = generateMenu
+		end
 		clickedLandmarkZone = mapID
 		clickedLandmark = coord
 		ToggleDropDownMenu(1, nil, HD_Dropdown, self, 0, 0)
