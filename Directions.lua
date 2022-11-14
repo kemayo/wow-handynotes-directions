@@ -210,7 +210,8 @@ local replacements = {
 	[L["The west."]] = L["West"],
 }
 function HD:OnGossipSelectOption(optionID, ...)
-	Debug("OnGossipSelectOption", optionID)
+	Debug("OnGossipSelectOption", optionID, currentOptions)
+	if not currentOptions then return end
 	local selected
 	for _, option in ipairs(currentOptions) do
 		if option.gossipOptionID == optionID then
