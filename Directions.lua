@@ -70,15 +70,27 @@ local function deletePin(button, mapID, coord)
 	HD:SendMessage("HandyNotes_NotifyUpdate", "Directions")
 end
 
-local function createWaypoint(button, mapID, coord)
+local function createWaypoint(button, uiMapID, coord)
 	local x, y = HandyNotes:getXY(coord)
-	local name = HD.db.global.landmarks[mapID][coord]
-	if TomTom then
-		TomTom:AddWaypoint(mapID, x, y, {
+	local name = HD.db.global.landmarks[uiMapID][coord]
+	if MapPinEnhanced and MapPinEnhanced.AddPin then
+		MapPinEnhanced:AddPin{
+			mapID = uiMapID,
+			x = x,
+			y = y,
+			setTracked = true,
+			title = name,
+		}
+	elseif TomTom then
+		TomTom:AddWaypoint(uiMapID, x, y, {
 			title = name,
 			world = false,
 			minimap = true,
 		})
+	elseif C_Map and C_Map.CanSetUserWaypointOnMap and C_Map.CanSetUserWaypointOnMap(uiMapID) then
+		local uiMapPoint = UiMapPoint.CreateFromCoordinates(uiMapID, x, y)
+		C_Map.SetUserWaypoint(uiMapPoint)
+		C_SuperTrack.SetSuperTrackedUserWaypoint(true)
 	end
 end
 
@@ -194,7 +206,7 @@ function HD:AddLandmark(mapID, x, y, name)
 	end
 	self.db.global.landmarks[mapID][loc] = name
 	self:SendMessage("HandyNotes_NotifyUpdate", "Directions")
-	createWaypoint(nil, mapID, loc)
+	createWaypoint(mapID, loc)
 end
 
 local replacements = {
