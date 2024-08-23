@@ -1,3 +1,6 @@
+local myname, ns = ...
+local _, myfullname = C_AddOns.GetAddOnInfo(myname)
+
 ---------------------------------------------------------
 -- Addon declaration
 HandyNotes_Directions = LibStub("AceAddon-3.0"):NewAddon("HandyNotes_Directions","AceEvent-3.0")
@@ -14,7 +17,7 @@ local db
 local defaults = {
 	global = {
 		landmarks = {
-			["*"] = {},  -- [mapID] = {[coord] = "name", [coord] = "name"}
+			["*"] = {},  -- [mapID] = {[coord] = "name", [coord] = "name", [coord] = {name="name", icon="atlas"}}
 		},
 	},
 	profile = {
@@ -22,6 +25,7 @@ local defaults = {
 		icon_alpha         = 1.0,
 	},
 }
+local landmarks
 
 ---------------------------------------------------------
 -- Localize some globals
@@ -32,7 +36,6 @@ local HandyNotes = HandyNotes
 ---------------------------------------------------------
 -- Constants
 
-local icon
 local function setupLandmarkIcon(texture, left, right, top, bottom)
 	return {
 		icon = texture,
@@ -40,15 +43,35 @@ local function setupLandmarkIcon(texture, left, right, top, bottom)
 		tCoordRight = right,
 		tCoordTop = top,
 		tCoordBottom = bottom,
+		-- _string = CreateTextureMarkup(texture, 255, 512, 0, 0, left, right, top, bottom),
 	}
 end
+local function setupAtlasIcon(atlas, scale, crop)
+	local info = C_Texture.GetAtlasInfo(atlas)
+	local icon = {
+		icon = info.file,
+		scale = scale or 1,
+		tCoordLeft = info.leftTexCoord, tCoordRight = info.rightTexCoord, tCoordTop = info.topTexCoord, tCoordBottom = info.bottomTexCoord,
+	}
+	if crop then
+		local xcrop = (icon.tCoordRight - icon.tCoordLeft) * crop
+		local ycrop = (icon.tCoordBottom - icon.tCoordTop) * crop
+		icon.tCoordRight = icon.tCoordRight - xcrop
+		icon.tCoordLeft = icon.tCoordLeft + xcrop
+		icon.tCoordBottom = icon.tCoordBottom - ycrop
+		icon.tCoordTop = icon.tCoordTop + xcrop
+	end
+	-- icon._atlas = atlas
+	-- icon._string = CreateAtlasMarkup(atlas)
+	return icon
+end
+
+local icons = {}
 
 ---------------------------------------------------------
 -- Plugin Handlers to HandyNotes
 local HDHandler = {}
 local info = {}
-local clickedLandmark = nil
-local clickedLandmarkZone = nil
 local lastGossip = nil
 local currentOptions
 
@@ -59,20 +82,18 @@ function HDHandler:OnEnter(mapID, coord)
 	else
 		tooltip:SetOwner(self, "ANCHOR_RIGHT")
 	end
-	tooltip:SetText(HD.db.global.landmarks[mapID][coord])
+	tooltip:SetText(landmarks[mapID][coord].name)
 	tooltip:Show()
-	clickedLandmark = nil
-	clickedLandmarkZone = nil
 end
 
-local function deletePin(button, mapID, coord)
-	HD.db.global.landmarks[mapID][coord] = nil
+local function deletePin(mapID, coord)
+	landmarks[mapID][coord] = nil
 	HD:SendMessage("HandyNotes_NotifyUpdate", "Directions")
 end
 
-local function createWaypoint(button, uiMapID, coord)
+local function createWaypoint(uiMapID, coord)
 	local x, y = HandyNotes:getXY(coord)
-	local name = HD.db.global.landmarks[uiMapID][coord]
+	local name = landmarks[uiMapID][coord].name
 	if MapPinEnhanced and MapPinEnhanced.AddPin then
 		MapPinEnhanced:AddPin{
 			mapID = uiMapID,
@@ -94,61 +115,66 @@ local function createWaypoint(button, uiMapID, coord)
 	end
 end
 
-local function generateMenu(button, level)
-	if (not level) then return end
-	for k in pairs(info) do info[k] = nil end
-	if (level == 1) then
-		-- Create the title of the menu
-		info.isTitle      = 1
-		info.text         = "HandyNotes - Directions"
-		info.notCheckable = 1
-		UIDropDownMenu_AddButton(info, level)
-
-		if TomTom then
-			-- Waypoint menu item
-			info.disabled     = nil
-			info.isTitle      = nil
-			info.notCheckable = true
-			info.text = "Create waypoint"
-			info.icon = nil
-			info.func = createWaypoint
-			info.arg1 = clickedLandmarkZone
-			info.arg2 = clickedLandmark
-			UIDropDownMenu_AddButton(info, level);
-		end
-
-		-- Delete menu item
-		info.disabled     = nil
-		info.isTitle      = nil
-		info.notCheckable = true
-		info.text = "Delete landmark"
-		info.icon = "poi-islands-table"
-		info.func = deletePin
-		info.arg1 = clickedLandmarkZone
-		info.arg2 = clickedLandmark
-		UIDropDownMenu_AddButton(info, level);
-
-		-- Close menu item
-		info.text         = "Close"
-		info.icon         = nil
-		info.func         = function() CloseDropDownMenus() end
-		info.arg1         = nil
-		info.notCheckable = 1
-		UIDropDownMenu_AddButton(info, level);
-	end
-end
-
-local HD_Dropdown
 function HDHandler:OnClick(button, down, mapID, coord)
 	if button == "RightButton" and not down then
-		if not HD_Dropdown then
-			HD_Dropdown = CreateFrame("Frame", "HandyNotes_DirectionsDropdownMenu")
-			HD_Dropdown.displayMode = "MENU"
-			HD_Dropdown.initialize = generateMenu
+		if not (_G.MenuUtil and MenuUtil.CreateContextMenu) then
+			return
 		end
-		clickedLandmarkZone = mapID
-		clickedLandmark = coord
-		ToggleDropDownMenu(1, nil, HD_Dropdown, self, 0, 0)
+		MenuUtil.CreateContextMenu(nil, function(owner, rootDescription)
+			rootDescription:SetTag("MENU_HANDYNOTES_DIRECTIONS_CONTEXT")
+			local title = rootDescription:CreateTitle(myfullname)
+			title:AddInitializer(function(frame, description, menu)
+				local rightTexture = frame:AttachTexture()
+				rightTexture:SetSize(18, 18)
+				rightTexture:SetPoint("RIGHT")
+				rightTexture:SetAtlas("poi-islands-table")
+
+				frame.fontString:SetPoint("RIGHT", rightTexture, "LEFT")
+
+				local pad = 20
+				local width = pad + frame.fontString:GetUnboundedStringWidth() + rightTexture:GetWidth()
+				local height = 20
+				return width, height
+			end)
+			rootDescription:CreateButton("Create waypoint", function(data, event) createWaypoint(mapID, coord) end)
+			do
+				local icon = rootDescription:CreateButton("Icon...")
+				local columns = 3
+				icon:SetGridMode(MenuConstants.VerticalGridDirection, columns)
+				local iconSelect = function(val)
+					landmarks[mapID][coord].icon = val
+					HD:SendMessage("HandyNotes_NotifyUpdate", "Directions")
+					return MenuResponse.Close
+				end
+				for key, texdef in pairs(icons) do
+					local b = icon:CreateButton(key, iconSelect, key)
+					b:AddInitializer(function(frame, description, menu)
+						frame.fontString:Hide()
+						local texture = frame:AttachTexture()
+						texture:SetSize(20, 20)
+						texture:SetPoint("CENTER")
+						texture:SetTexture(texdef.icon)
+						texture:SetTexCoord(texdef.tCoordLeft, texdef.tCoordRight, texdef.tCoordTop, texdef.tCoordBottom)
+						if
+							(key == landmarks[mapID][coord].icon)
+							or (key == "default" and not landmarks[mapID][coord].icon)
+						then
+							local highlight = frame:AttachTexture()
+							highlight:SetAllPoints()
+							highlight:SetAtlas("auctionhouse-nav-button-highlight")
+							-- highlight:SetPoint("CENTER")
+							-- highlight:SetSize(30, 30)
+							-- highlight:SetAtlas("common-roundhighlight")
+							highlight:SetBlendMode("ADD")
+							highlight:SetDrawLayer("BACKGROUND")
+						end
+						return 30, 30
+					end)
+				end
+			end
+
+			rootDescription:CreateButton(DELETE, function(data, event) deletePin(mapID, coord) end)
+		end)
 	end
 end
 
@@ -164,6 +190,7 @@ do
 		while state do -- Have we reached the end of this zone?
 			if value then
 				Debug("iter step", state, icon, db.icon_scale, db.icon_alpha)
+				local icon = type(value) == "table" and icons[value.icon] or icons.default
 				return state, nil, icon, db.icon_scale, db.icon_alpha
 			end
 			state, value = next(t, state) -- Get next data
@@ -171,7 +198,7 @@ do
 		return nil, nil, nil, nil
 	end
 	function HDHandler:GetNodes2(mapID)
-		return iter, HD.db.global.landmarks[mapID], nil
+		return iter, landmarks[mapID], nil
 	end
 end
 
@@ -198,13 +225,13 @@ end
 
 function HD:AddLandmark(mapID, x, y, name)
 	local loc = HandyNotes:getCoord(x, y)
-	for coord, value in pairs(self.db.global.landmarks[mapID]) do
+	for coord, value in pairs(landmarks[mapID]) do
 		if value and value:match("^"..name) then
 			Debug("already a match on name", name, value)
 			return
 		end
 	end
-	self.db.global.landmarks[mapID][loc] = name
+	landmarks[mapID][loc] = {name = name,}
 	self:SendMessage("HandyNotes_NotifyUpdate", "Directions")
 	createWaypoint(mapID, loc)
 end
@@ -299,13 +326,46 @@ function HD:OnInitialize()
 	-- Set up our database
 	self.db = LibStub("AceDB-3.0"):New("HandyNotes_DirectionsDB", defaults)
 	db = self.db.profile
-	for k, v in pairs(self.db.global.landmarks) do
-		if type(k) == "string" then
-			self.db.global.landmarks[k] = {}
+	landmarks = self.db.global.landmarks
+
+	for mapid, points in pairs(landmarks) do
+		for coord, point in pairs(points) do
+			if type(point) == "string" then
+				points[coord] = {name=point}
+			end
 		end
 	end
 
-	icon = setupLandmarkIcon([[Interface\Minimap\POIIcons]], (_G.GetPOITextureCoords or C_Minimap.GetPOITextureCoords)(7)) -- the cute lil' flag
+	icons.default = setupLandmarkIcon([[Interface\Minimap\POIIcons]], C_Minimap.GetPOITextureCoords(7)) -- the cute lil' flag
+	icons.map = setupAtlasIcon([[poi-islands-table]])
+	icons.banker = setupAtlasIcon([[Banker]])
+	icons.barber = setupAtlasIcon([[Barbershop-32x32]])
+	icons.battlemaster = setupAtlasIcon([[BattleMaster]])
+	icons.class = setupAtlasIcon([[Class]])
+	icons.chromie = setupAtlasIcon([[ChromieTime-32x32]])
+	icons.innkeeper = setupAtlasIcon([[Innkeeper]])
+	icons.creationcatalyst = setupAtlasIcon([[CreationCatalyst-32x32]])
+	icons.ancientmana = setupAtlasIcon([[AncientMana]])
+	icons.profession = setupAtlasIcon([[Profession]])
+	icons.racing = setupAtlasIcon([[racing]])
+	icons.reagents = setupAtlasIcon([[Reagents]])
+	icons.repair = setupAtlasIcon([[Repair]])
+	icons.portalblue = setupAtlasIcon([[MagePortalAlliance]])
+	icons.portalred = setupAtlasIcon([[MagePortalHorde]])
+	icons.loreobject = setupAtlasIcon([[loreobject-32x32]])
+	icons.mailbox = setupAtlasIcon([[Mailbox]])
+	icons.food = setupAtlasIcon([[Food]])
+	icons.auctioneer = setupAtlasIcon([[Auctioneer]])
+	icons.transmog = setupAtlasIcon([[poi-transmogrifier]])
+	icons.crossedflags = setupAtlasIcon([[CrossedFlags]])
+	icons.town = setupAtlasIcon([[poi-town]])
+	icons.workorders = setupAtlasIcon([[poi-workorders]])
+	icons.flightmaster = setupAtlasIcon([[FlightMaster]])
+	icons.door = setupAtlasIcon([[delves-bountiful]])
+	icons.fishing = setupAtlasIcon([[Fishing-Hole]])
+	icons.rostrum = setupAtlasIcon([[dragon-rostrum]])
+	icons.magnify = setupAtlasIcon([[None]])
+	-- icons. = setupAtlasIcon([[]])
 
 	-- Initialize our database with HandyNotes
 	HandyNotes:RegisterPluginDB("Directions", HDHandler, options)

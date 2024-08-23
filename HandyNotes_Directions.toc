@@ -1,5 +1,5 @@
 ﻿## Interface: 110002
-## Title: HandyNotes_Directions
+## Title: HandyNotes: Directions
 ## Notes: Remember locations that city guards direct you to for HandyNotes
 ## Author: Kemayo
 ## Version: @project-version@
@@ -7,7 +7,7 @@
 ## DefaultState: enabled
 ## X-Category: Map
 ## X-eMail: kemayo @ gmail DOT com
-## X-Credits: I totally copied the structure from HandyNotes_Mailboxes by Kagaro
+## X-Credits: I totally copied the original structure from HandyNotes_Mailboxes by Kagaro
 ## SavedVariables: HandyNotes_DirectionsDB
 ## RequiredDeps: HandyNotes
 
