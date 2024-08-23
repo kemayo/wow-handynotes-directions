@@ -173,12 +173,12 @@ function HD:CheckForLandmarks()
 	if not lastGossip then return end
 	local mapID = C_Map.GetBestMapForUnit('player')
 	local poiID = C_GossipInfo.GetPoiForUiMapID(mapID)
-
-	if poiID and not alreadyAdded[poiID] then
+	Debug("--> POI exists", mapID, poiID, alreadyAdded[poiID])
+	if poiID and not alreadyAdded[lastGossip] then
 		local gossipInfo = C_GossipInfo.GetPoiInfo(mapID, poiID);
 		if gossipInfo and gossipInfo.textureIndex == 7 then
 			Debug("Found POI", gossipInfo.name)
-			alreadyAdded[poiID] = true
+			alreadyAdded[lastGossip] = true
 			self:AddLandmark(mapID, gossipInfo.position.x, gossipInfo.position.y, lastGossip)
 		end
 	end
@@ -200,8 +200,10 @@ end
 local replacements = {
 	[L["A profession trainer"]] = L["Trainer"],
 	[L["Profession Trainer"]] = L["Trainer"],
+	[MINIMAP_TRACKING_TRAINER_PROFESSION] = L["Trainer"], -- Profession Trainers
 	[L["A class trainer"]] = L["Trainer"],
-	[L["Class Trainer"]] = L["Trainer"],
+	-- [L["Class Trainer"]] = L["Trainer"],
+	[MINIMAP_TRACKING_TRAINER_CLASS] = L["Trainer"], -- Class Trainer
 	[L["Alliance Battlemasters"]] = FACTION_ALLIANCE,
 	[L["Horde Battlemasters"]] = FACTION_HORDE,
 	[L["To the east."]] = L["East"],
@@ -209,12 +211,12 @@ local replacements = {
 	[L["The east."]] = L["East"],
 	[L["The west."]] = L["West"],
 }
-function HD:OnGossipSelectOption(optionID, ...)
-	Debug("OnGossipSelectOption", optionID, currentOptions)
+function HD:OnGossipSelectOption(key, identifier, ...)
+	Debug("OnGossipSelectOption", key, identifier, currentOptions)
 	if not currentOptions then return end
 	local selected
 	for _, option in ipairs(currentOptions) do
-		if option.gossipOptionID == optionID then
+		if option[key] == identifier then
 			selected = option
 			break
 		end
@@ -304,6 +306,9 @@ function HD:OnEnable()
 	self:RegisterEvent("GOSSIP_SHOW")
 
 	hooksecurefunc(C_GossipInfo, "SelectOption", function(...)
-		HD:OnGossipSelectOption(...)
+		HD:OnGossipSelectOption("gossipOptionID", ...)
+	end)
+	hooksecurefunc(C_GossipInfo, "SelectOptionByIndex", function(...)
+		HD:OnGossipSelectOption("orderIndex", ...)
 	end)
 end
