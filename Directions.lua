@@ -225,9 +225,9 @@ end
 
 function HD:AddLandmark(mapID, x, y, name)
 	local loc = HandyNotes:getCoord(x, y)
-	for coord, value in pairs(landmarks[mapID]) do
-		if value and value:match("^"..name) then
-			Debug("already a match on name", name, value)
+	for coord, data in pairs(landmarks[mapID]) do
+		if data and data.name and data.name:match("^"..name) then
+			Debug("already a match on name", name, data.name)
 			return
 		end
 	end
