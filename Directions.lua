@@ -23,6 +23,7 @@ local defaults = {
 	profile = {
 		icon_scale         = 1.0,
 		icon_alpha         = 1.0,
+		minimap            = true,
 	},
 }
 local landmarks
@@ -183,6 +184,7 @@ end
 
 do
 	-- This is a custom iterator we use to iterate over every node in a given zone
+	local empty = {}
 	local function iter(t, prestate)
 		if not t then return nil end
 		local state, value = next(t, prestate)
@@ -196,7 +198,8 @@ do
 		end
 		return nil, nil, nil, nil
 	end
-	function HDHandler:GetNodes2(mapID)
+	function HDHandler:GetNodes2(mapID, minimap)
+		if minimap and not db.minimap then return iter, empty end
 		return iter, landmarks[mapID], nil
 	end
 end
@@ -401,6 +404,13 @@ local options = {
 			min = 0, max = 1, step = 0.01,
 			arg = "icon_alpha",
 			order = 20,
+		},
+		minimap = {
+			type = "toggle",
+			name = "Minimap",
+			desc = "Show on the minimap",
+			arg = "minimap",
+			order = 30,
 		},
 	},
 }
