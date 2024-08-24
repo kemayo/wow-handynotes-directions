@@ -72,9 +72,7 @@ local icons = {}
 ---------------------------------------------------------
 -- Plugin Handlers to HandyNotes
 local HDHandler = {}
-local info = {}
-local lastGossip = nil
-local currentOptions
+local lastGossip, likelyIcon, currentOptions
 
 function HDHandler:OnEnter(mapID, coord)
 	local tooltip = GameTooltip
@@ -219,12 +217,14 @@ function HD:CheckForLandmarks()
 		if gossipInfo and gossipInfo.textureIndex == 7 then
 			Debug("Found POI", gossipInfo.name)
 			alreadyAdded[lastGossip] = true
-			self:AddLandmark(mapID, gossipInfo.position.x, gossipInfo.position.y, lastGossip)
+			likelyIcon = likelyIcon or self:LikelyIconForName(gossipInfo.name)
+			self:AddLandmark(mapID, gossipInfo.position.x, gossipInfo.position.y, lastGossip, likelyIcon)
 		end
 	end
 end
 
-function HD:AddLandmark(mapID, x, y, name)
+function HD:AddLandmark(mapID, x, y, name, icon)
+	Debug("AddLandmark", mapID, x, y, name, icon)
 	local loc = HandyNotes:getCoord(x, y)
 	for coord, data in pairs(landmarks[mapID]) do
 		if data and data.name and data.name:match("^"..name) then
@@ -233,6 +233,9 @@ function HD:AddLandmark(mapID, x, y, name)
 		end
 	end
 	landmarks[mapID][loc] = {name = name,}
+	if icon and icons[icon] then
+		landmarks[mapID][loc].icon = icon
+	end
 	self:SendMessage("HandyNotes_NotifyUpdate", "Directions")
 	createWaypoint(mapID, loc)
 end
@@ -263,6 +266,8 @@ function HD:OnGossipSelectOption(key, identifier, ...)
 	end
 	if not selected then return end
 	local name = selected.name
+	-- could let later ones take over, but runs into problems with things like "Mailbox > Bank"
+	likelyIcon = likelyIcon or self:LikelyIconForName(name, selected)
 	if replacements[name] then name = replacements[name] end
 	if lastGossip then
 		lastGossip = lastGossip .. ': ' .. name
@@ -270,6 +275,87 @@ function HD:OnGossipSelectOption(key, identifier, ...)
 		lastGossip = name
 	end
 	Debug(" -> lastGossip", lastGossip)
+end
+
+do
+	local iconMap = {
+		[BLACK_MARKET_AUCTION_HOUSE] = "auctioneer",
+		[BUTTON_LAG_AUCTIONHOUSE] = "auctioneer",
+		[CONTINENT] = "portalblue",
+		[DELVES_GREAT_VAULT_LABEL] = "vault",
+		[MINIMAP_TRACKING_TRAINER_CLASS] = "class",
+		[MINIMAP_TRACKING_TRAINER_PROFESSION] = "profession",
+		[MINIMAP_TRACKING_AUCTIONEER] = "auctioneer",
+		[MINIMAP_TRACKING_BANKER] = "banker",
+		[MINIMAP_TRACKING_BARBER] = "barber",
+		[MINIMAP_TRACKING_BATTLEMASTER] = "battlemaster",
+		[MINIMAP_TRACKING_FLIGHTMASTER] = "flightmaster",
+		[MINIMAP_TRACKING_INNKEEPER] = "innkeeper",
+		[MINIMAP_TRACKING_ITEM_UPGRADE_MASTER] = "upgradeitem",
+		[MINIMAP_TRACKING_MAILBOX] = "mailbox",
+		[MINIMAP_TRACKING_REPAIR] = "repair",
+		[MINIMAP_TRACKING_STABLEMASTER] = "stablemaster",
+		[MINIMAP_TRACKING_TRAINER_CLASS] = "class",
+		[MINIMAP_TRACKING_TRAINER_PROFESSION] = "profession",
+		[MINIMAP_TRACKING_TRANSMOGRIFIER] = "transmog",
+		[MINIMAP_TRACKING_VENDOR_AMMO] = "ammo",
+		[MINIMAP_TRACKING_VENDOR_FOOD] = "food",
+		[MINIMAP_TRACKING_VENDOR_POISON] = "poisons",
+		[MINIMAP_TRACKING_VENDOR_REAGENT] = "reagents",
+		[PROFESSIONS_CRAFTING_ORDERS_TAB_NAME] = "workorders",
+		[TOOLTIP_BATTLE_PET] = "battlepet",
+		[TRANSMOG_SOURCE_7] = "tradingpost",
+		[L["Rostrum of Transformation"]] = "rostrum",
+	}
+	function HD:LikelyIconForName(name)
+		for label, icon in pairs(iconMap) do
+			-- pluralization is... inconsistent
+			if name:match("^"..label) or label:match("^"..name) then
+				return icon
+			end
+		end
+	end
+end
+
+function HD:SetupIcons()
+	icons.default = setupLandmarkIcon([[Interface\Minimap\POIIcons]], C_Minimap.GetPOITextureCoords(7)) -- the cute lil' flag
+	icons.ammo = setupAtlasIcon([[Ammunition]])
+	icons.ancientmana = setupAtlasIcon([[AncientMana]])
+	icons.auctioneer = setupAtlasIcon([[Auctioneer]])
+	icons.banker = setupAtlasIcon([[Banker]])
+	icons.battlepet = setupAtlasIcon([[WildBattlePetCapturable]])
+	icons.barber = setupAtlasIcon([[Barbershop-32x32]])
+	icons.battlemaster = setupAtlasIcon([[BattleMaster]])
+	icons.chromie = setupAtlasIcon([[ChromieTime-32x32]])
+	icons.class = setupAtlasIcon([[Class]])
+	icons.creationcatalyst = setupAtlasIcon([[CreationCatalyst-32x32]])
+	icons.crossedflags = setupAtlasIcon([[CrossedFlags]])
+	icons.door = setupAtlasIcon([[delves-bountiful]], 1.2)
+	icons.fishing = setupAtlasIcon([[Fishing-Hole]])
+	icons.flightmaster = setupAtlasIcon([[FlightMaster]])
+	icons.food = setupAtlasIcon([[Food]])
+	icons.greencross = setupAtlasIcon([[GreenCross]])
+	icons.innkeeper = setupAtlasIcon([[Innkeeper]])
+	icons.loreobject = setupAtlasIcon([[loreobject-32x32]])
+	icons.magnify = setupAtlasIcon([[None]])
+	icons.mailbox = setupAtlasIcon([[Mailbox]])
+	icons.map = setupAtlasIcon([[poi-islands-table]])
+	icons.poisons = setupAtlasIcon([[Poisons]])
+	icons.portalblue = setupAtlasIcon([[MagePortalAlliance]], 1.3)
+	icons.portalred = setupAtlasIcon([[MagePortalHorde]], 1.3)
+	icons.profession = setupAtlasIcon([[Profession]], 1.2)
+	icons.racing = setupAtlasIcon([[racing]])
+	icons.reagents = setupAtlasIcon([[Reagents]])
+	icons.repair = setupAtlasIcon([[Repair]])
+	icons.rostrum = setupAtlasIcon([[dragon-rostrum]])
+	icons.stablemaster = setupAtlasIcon([[StableMaster]])
+	icons.town = setupAtlasIcon([[poi-town]])
+	icons.tradingpost = setupAtlasIcon([[trading-post-minimap-icon]], 1.3)
+	icons.transmog = setupAtlasIcon([[poi-transmogrifier]])
+	icons.upgradeitem = setupAtlasIcon([[UpgradeItem-32x32]])
+	icons.vault = setupAtlasIcon([[greatvault-dragonflight-32x32]], 1.3)
+	icons.workorders = setupAtlasIcon([[poi-workorders]])
+	-- icons. = setupAtlasIcon([[]])
 end
 
 function HD:GOSSIP_SHOW()
@@ -280,6 +366,7 @@ end
 function HD:GOSSIP_CLOSED()
 	Debug("GOSSIP_CLOSED")
 	lastGossip = nil
+	likelyIcon = nil
 end
 
 ---------------------------------------------------------
@@ -337,36 +424,7 @@ function HD:OnInitialize()
 		end
 	end
 
-	icons.default = setupLandmarkIcon([[Interface\Minimap\POIIcons]], C_Minimap.GetPOITextureCoords(7)) -- the cute lil' flag
-	icons.map = setupAtlasIcon([[poi-islands-table]])
-	icons.banker = setupAtlasIcon([[Banker]])
-	icons.barber = setupAtlasIcon([[Barbershop-32x32]])
-	icons.battlemaster = setupAtlasIcon([[BattleMaster]])
-	icons.class = setupAtlasIcon([[Class]])
-	icons.chromie = setupAtlasIcon([[ChromieTime-32x32]])
-	icons.innkeeper = setupAtlasIcon([[Innkeeper]])
-	icons.creationcatalyst = setupAtlasIcon([[CreationCatalyst-32x32]])
-	icons.ancientmana = setupAtlasIcon([[AncientMana]])
-	icons.profession = setupAtlasIcon([[Profession]])
-	icons.racing = setupAtlasIcon([[racing]])
-	icons.reagents = setupAtlasIcon([[Reagents]])
-	icons.repair = setupAtlasIcon([[Repair]])
-	icons.portalblue = setupAtlasIcon([[MagePortalAlliance]])
-	icons.portalred = setupAtlasIcon([[MagePortalHorde]])
-	icons.loreobject = setupAtlasIcon([[loreobject-32x32]])
-	icons.mailbox = setupAtlasIcon([[Mailbox]])
-	icons.food = setupAtlasIcon([[Food]])
-	icons.auctioneer = setupAtlasIcon([[Auctioneer]])
-	icons.transmog = setupAtlasIcon([[poi-transmogrifier]])
-	icons.crossedflags = setupAtlasIcon([[CrossedFlags]])
-	icons.town = setupAtlasIcon([[poi-town]])
-	icons.workorders = setupAtlasIcon([[poi-workorders]])
-	icons.flightmaster = setupAtlasIcon([[FlightMaster]])
-	icons.door = setupAtlasIcon([[delves-bountiful]])
-	icons.fishing = setupAtlasIcon([[Fishing-Hole]])
-	icons.rostrum = setupAtlasIcon([[dragon-rostrum]])
-	icons.magnify = setupAtlasIcon([[None]])
-	-- icons. = setupAtlasIcon([[]])
+	self:SetupIcons()
 
 	-- Initialize our database with HandyNotes
 	HandyNotes:RegisterPluginDB("Directions", HDHandler, options)
