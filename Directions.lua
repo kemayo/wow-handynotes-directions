@@ -174,6 +174,10 @@ function HDHandler:OnClick(button, down, mapID, coord)
 			end
 
 			rootDescription:CreateButton(DELETE, function(data, event) deletePin(mapID, coord) end)
+			rootDescription:CreateDivider()
+			rootDescription:CreateButton(SETTINGS_TITLE, function()
+				LibStub("AceConfigDialog-3.0"):Open(myname)
+			end)
 		end)
 	end
 end
@@ -438,6 +442,7 @@ function HD:OnInitialize()
 
 	-- Initialize our database with HandyNotes
 	HandyNotes:RegisterPluginDB("Directions", HDHandler, options)
+	LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable(myname, options)
 end
 
 local orig_SelectGossipOption
