@@ -43,6 +43,7 @@ local function setupLandmarkIcon(texture, left, right, top, bottom)
 		tCoordRight = right,
 		tCoordTop = top,
 		tCoordBottom = bottom,
+		scale = 1,
 		-- _string = CreateTextureMarkup(texture, 255, 512, 0, 0, left, right, top, bottom),
 	}
 end
@@ -191,7 +192,7 @@ do
 			if value then
 				Debug("iter step", state, icon, db.icon_scale, db.icon_alpha)
 				local icon = type(value) == "table" and icons[value.icon] or icons.default
-				return state, nil, icon, db.icon_scale, db.icon_alpha
+				return state, nil, icon, icon.scale * db.icon_scale, db.icon_alpha
 			end
 			state, value = next(t, state) -- Get next data
 		end
