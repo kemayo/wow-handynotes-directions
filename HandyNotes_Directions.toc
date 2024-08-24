@@ -8,6 +8,7 @@
 ## X-Category: Map
 ## X-eMail: kemayo @ gmail DOT com
 ## X-Credits: I totally copied the original structure from HandyNotes_Mailboxes by Kagaro
+## X-Curse-Project-ID: 14155
 ## SavedVariables: HandyNotes_DirectionsDB
 ## RequiredDeps: HandyNotes
 
