@@ -139,7 +139,7 @@ function HDHandler:OnClick(button, down, mapID, coord)
 			rootDescription:CreateButton("Create waypoint", function(data, event) createWaypoint(mapID, coord) end)
 			do
 				local icon = rootDescription:CreateButton("Icon...")
-				local columns = 3
+				local columns = 4
 				icon:SetGridMode(MenuConstants.VerticalGridDirection, columns)
 				local iconSelect = function(val)
 					landmarks[mapID][coord].icon = val
