@@ -141,6 +141,31 @@ function HDHandler:OnClick(button, down, mapID, coord)
 				local icon = rootDescription:CreateButton("Icon...")
 				local columns = 4
 				icon:SetGridMode(MenuConstants.VerticalGridDirection, columns)
+				local function iconInitializer(frame, description, menu)
+					local key = description:GetData()
+					local texdef = icons[key]
+
+					frame.fontString:Hide()
+					local texture = frame:AttachTexture()
+					texture:SetSize(20, 20)
+					texture:SetPoint("CENTER")
+					texture:SetTexture(texdef.icon)
+					texture:SetTexCoord(texdef.tCoordLeft, texdef.tCoordRight, texdef.tCoordTop, texdef.tCoordBottom)
+					if
+						(key == landmarks[mapID][coord].icon)
+						or (key == "default" and not landmarks[mapID][coord].icon)
+					then
+						local highlight = frame:AttachTexture()
+						highlight:SetAllPoints()
+						highlight:SetAtlas("auctionhouse-nav-button-highlight")
+						-- highlight:SetPoint("CENTER")
+						-- highlight:SetSize(30, 30)
+						-- highlight:SetAtlas("common-roundhighlight")
+						highlight:SetBlendMode("ADD")
+						highlight:SetDrawLayer("BACKGROUND")
+					end
+					return 30, 30
+				end
 				local iconSelect = function(val)
 					landmarks[mapID][coord].icon = val
 					HD:SendMessage("HandyNotes_NotifyUpdate", "Directions")
@@ -148,28 +173,7 @@ function HDHandler:OnClick(button, down, mapID, coord)
 				end
 				for key, texdef in pairs(icons) do
 					local b = icon:CreateButton(key, iconSelect, key)
-					b:AddInitializer(function(frame, description, menu)
-						frame.fontString:Hide()
-						local texture = frame:AttachTexture()
-						texture:SetSize(20, 20)
-						texture:SetPoint("CENTER")
-						texture:SetTexture(texdef.icon)
-						texture:SetTexCoord(texdef.tCoordLeft, texdef.tCoordRight, texdef.tCoordTop, texdef.tCoordBottom)
-						if
-							(key == landmarks[mapID][coord].icon)
-							or (key == "default" and not landmarks[mapID][coord].icon)
-						then
-							local highlight = frame:AttachTexture()
-							highlight:SetAllPoints()
-							highlight:SetAtlas("auctionhouse-nav-button-highlight")
-							-- highlight:SetPoint("CENTER")
-							-- highlight:SetSize(30, 30)
-							-- highlight:SetAtlas("common-roundhighlight")
-							highlight:SetBlendMode("ADD")
-							highlight:SetDrawLayer("BACKGROUND")
-						end
-						return 30, 30
-					end)
+					b:AddInitializer(iconInitializer)
 				end
 			end
 
