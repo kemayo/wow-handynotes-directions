@@ -1,4 +1,4 @@
-﻿## Interface: 110002
+﻿## Interface: 110002, 40400, 11503
 ## Title: HandyNotes: Directions
 ## Notes: Remember locations that city guards direct you to for HandyNotes
 ## Author: Kemayo

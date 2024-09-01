@@ -1,6 +1,10 @@
 local myname, ns = ...
 local _, myfullname = C_AddOns.GetAddOnInfo(myname)
 
+
+ns.CLASSIC = WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE -- rolls forward
+ns.CLASSICERA = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC -- forever vanilla
+
 ---------------------------------------------------------
 -- Addon declaration
 HandyNotes_Directions = LibStub("AceAddon-3.0"):NewAddon("HandyNotes_Directions","AceEvent-3.0")
@@ -37,6 +41,8 @@ local HandyNotes = HandyNotes
 ---------------------------------------------------------
 -- Constants
 
+local POI_TEXTURE_FLAG = ns.CLASSIC and 6 or 7
+
 local function setupLandmarkIcon(texture, left, right, top, bottom)
 	return {
 		icon = texture,
@@ -50,6 +56,7 @@ local function setupLandmarkIcon(texture, left, right, top, bottom)
 end
 local function setupAtlasIcon(atlas, scale, crop)
 	local info = C_Texture.GetAtlasInfo(atlas)
+	if not info then return end
 	local icon = {
 		icon = info.file,
 		scale = scale or 1,
@@ -118,7 +125,7 @@ end
 function HDHandler:OnClick(button, down, mapID, coord)
 	if button == "RightButton" and not down then
 		if not (_G.MenuUtil and MenuUtil.CreateContextMenu) then
-			return
+			return Debug("No new dropdown menus")
 		end
 		MenuUtil.CreateContextMenu(nil, function(owner, rootDescription)
 			rootDescription:SetTag("MENU_HANDYNOTES_DIRECTIONS_CONTEXT")
@@ -224,8 +231,9 @@ function HD:CheckForLandmarks()
 	local poiID = C_GossipInfo.GetPoiForUiMapID(mapID)
 	Debug("--> POI exists", mapID, poiID, alreadyAdded[poiID])
 	if poiID and not alreadyAdded[lastGossip] then
-		local gossipInfo = C_GossipInfo.GetPoiInfo(mapID, poiID);
-		if gossipInfo and gossipInfo.textureIndex == 7 then
+		local gossipInfo = C_GossipInfo.GetPoiInfo(mapID, poiID)
+		Debug("--> POI", gossipInfo and gossipInfo.name, gossipInfo and gossipInfo.textureIndex)
+		if gossipInfo and gossipInfo.textureIndex == POI_TEXTURE_FLAG then
 			Debug("Found POI", gossipInfo.name)
 			alreadyAdded[lastGossip] = true
 			likelyIcon = likelyIcon or self:LikelyIconForName(gossipInfo.name)
@@ -289,36 +297,49 @@ function HD:OnGossipSelectOption(key, identifier, ...)
 end
 
 do
-	local iconMap = {
-		[BLACK_MARKET_AUCTION_HOUSE] = "auctioneer",
-		[BUTTON_LAG_AUCTIONHOUSE] = "auctioneer",
-		[CONTINENT] = "portalblue",
-		[DELVES_GREAT_VAULT_LABEL] = "vault",
-		[MINIMAP_TRACKING_TRAINER_CLASS] = "class",
-		[MINIMAP_TRACKING_TRAINER_PROFESSION] = "profession",
-		[MINIMAP_TRACKING_AUCTIONEER] = "auctioneer",
-		[MINIMAP_TRACKING_BANKER] = "banker",
-		[MINIMAP_TRACKING_BARBER] = "barber",
-		[MINIMAP_TRACKING_BATTLEMASTER] = "battlemaster",
-		[MINIMAP_TRACKING_FLIGHTMASTER] = "flightmaster",
-		[MINIMAP_TRACKING_INNKEEPER] = "innkeeper",
-		[MINIMAP_TRACKING_ITEM_UPGRADE_MASTER] = "upgradeitem",
-		[MINIMAP_TRACKING_MAILBOX] = "mailbox",
-		[MINIMAP_TRACKING_REPAIR] = "repair",
-		[MINIMAP_TRACKING_STABLEMASTER] = "stablemaster",
-		[MINIMAP_TRACKING_TRAINER_CLASS] = "class",
-		[MINIMAP_TRACKING_TRAINER_PROFESSION] = "profession",
-		[MINIMAP_TRACKING_TRANSMOGRIFIER] = "transmog",
-		[MINIMAP_TRACKING_VENDOR_AMMO] = "ammo",
-		[MINIMAP_TRACKING_VENDOR_FOOD] = "food",
-		[MINIMAP_TRACKING_VENDOR_POISON] = "poisons",
-		[MINIMAP_TRACKING_VENDOR_REAGENT] = "reagents",
-		[PROFESSIONS_CRAFTING_ORDERS_TAB_NAME] = "workorders",
-		[TOOLTIP_BATTLE_PET] = "battlepet",
-		[TRANSMOG_SOURCE_7] = "tradingpost",
-		[L["Rostrum of Transformation"]] = "rostrum",
+	-- dancing around classic-compatibility:
+	local rawicons = {
+		{BLACK_MARKET_AUCTION_HOUSE, "auctioneer"},
+		{BUTTON_LAG_AUCTIONHOUSE, "auctioneer"},
+		{CONTINENT, "portalblue"},
+		{DELVES_GREAT_VAULT_LABEL, "vault"},
+		{MINIMAP_TRACKING_TRAINER_CLASS, "class"},
+		{MINIMAP_TRACKING_TRAINER_PROFESSION, "profession"},
+		{MINIMAP_TRACKING_AUCTIONEER, "auctioneer"},
+		{MINIMAP_TRACKING_BANKER, "banker"},
+		{MINIMAP_TRACKING_BARBER, "barber"},
+		{MINIMAP_TRACKING_BATTLEMASTER, "battlemaster"},
+		{MINIMAP_TRACKING_FLIGHTMASTER, "flightmaster"},
+		{MINIMAP_TRACKING_INNKEEPER, "innkeeper"},
+		{MINIMAP_TRACKING_ITEM_UPGRADE_MASTER, "upgradeitem"},
+		{MINIMAP_TRACKING_MAILBOX, "mailbox"},
+		{MINIMAP_TRACKING_REPAIR, "repair"},
+		{MINIMAP_TRACKING_STABLEMASTER, "stablemaster"},
+		{MINIMAP_TRACKING_TRAINER_CLASS, "class"},
+		{MINIMAP_TRACKING_TRAINER_PROFESSION, "profession"},
+		{MINIMAP_TRACKING_TRANSMOGRIFIER, "transmog"},
+		{MINIMAP_TRACKING_VENDOR_AMMO, "ammo"},
+		{MINIMAP_TRACKING_VENDOR_FOOD, "food"},
+		{MINIMAP_TRACKING_VENDOR_POISON, "poisons"},
+		{MINIMAP_TRACKING_VENDOR_REAGENT, "reagents"},
+		{PROFESSIONS_CRAFTING_ORDERS_TAB_NAME, "workorders"},
+		{TOOLTIP_BATTLE_PET, "battlepet"},
+		{TRANSMOG_SOURCE_7, "tradingpost"},
+		{L["Rostrum of Transformation"], "rostrum"},
 	}
+	local iconMap
+	local function createIconMap()
+		iconMap = {}
+		for _, icon in ipairs(rawicons) do
+			if icon[1] and icons[icon[2]] then
+				iconMap[icon[1]] = icon[2]
+			else
+				Debug("Skipped creating icon", icon[1], icon[2])
+			end
+		end
+	end
 	function HD:LikelyIconForName(name)
+		if not iconMap then createIconMap() end
 		for label, icon in pairs(iconMap) do
 			-- pluralization is... inconsistent
 			if name:match("^"..label) or label:match("^"..name) then
@@ -329,7 +350,7 @@ do
 end
 
 function HD:SetupIcons()
-	icons.default = setupLandmarkIcon([[Interface\Minimap\POIIcons]], C_Minimap.GetPOITextureCoords(7)) -- the cute lil' flag
+	icons.default = setupLandmarkIcon([[Interface\Minimap\POIIcons]], C_Minimap.GetPOITextureCoords(POI_TEXTURE_FLAG)) -- the cute lil' flag
 	icons.ammo = setupAtlasIcon([[Ammunition]])
 	icons.ancientmana = setupAtlasIcon([[AncientMana]])
 	icons.auctioneer = setupAtlasIcon([[Auctioneer]])
