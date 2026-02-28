@@ -178,7 +178,9 @@ function HDHandler:OnClick(button, down, mapID, coord)
 					HD:SendMessage("HandyNotes_NotifyUpdate", "Directions")
 					return MenuResponse.Close
 				end
-				for key, texdef in pairs(icons) do
+				local sortedIcons = GetKeysArray(icons)
+				table.sort(sortedIcons, function (a, b) return a < b end)
+				for _, key in pairs(sortedIcons) do
 					local b = icon:CreateButton(key, iconSelect, key)
 					b:AddInitializer(iconInitializer)
 				end
